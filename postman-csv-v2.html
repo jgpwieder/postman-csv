@@ -1,0 +1,1318 @@
+var template = `
+<style>
+  /* Universal styles that work in both light and dark mode */
+  :root {
+    --bg-light: #ffffff;
+    --bg2-light: #f8f9fa;
+    --fg-light: #202124;
+    --border-light-theme: #dadce0;
+    --accent-light: #1a73e8;
+    --highlight-light: #e8f0fe;
+    
+    --bg-dark: #202124;
+    --bg2-dark: #303134;
+    --fg-dark: #e8eaed;
+    --border-dark: #5f6368;
+    --accent-dark: #8ab4f8;
+    --highlight-dark: #31405d;
+    
+    /* Universal colors that work well in both themes */
+    --red: #f28b82;
+    --yellow: #fdd663;
+    --green: #81c995;
+    --blue: #8ab4f8;
+    --purple: #d7aefb;
+    --grid-lines-light: #e0e0e0;
+    --grid-lines-dark: #3c4043;
+  }
+  
+  /* Force light background and dark text for compatibility */
+  .vis-container {
+    background-color: #ffffff;
+    color: #202124;
+    font-family: 'Roboto', Arial, sans-serif;
+    padding: 16px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  
+  .title {
+    font-size: 18px;
+    font-weight: 500;
+    color: #202124;
+  }
+  
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+    align-items: center;
+  }
+  
+  .toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 12px;
+    margin-right: 12px;
+    border-right: 1px solid #dadce0;
+  }
+  
+  .toolbar-section:last-child {
+    border-right: none;
+  }
+  
+  .btn {
+    background: #f1f3f4;
+    color: #202124;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .btn:hover {
+    background: #e8eaed;
+  }
+  
+  .btn-primary {
+    background: #1a73e8;
+    color: white;
+    border-color: transparent;
+  }
+  
+  .btn-primary:hover {
+    background: #1967d2;
+  }
+  
+  .btn-danger {
+    color: #ea4335;
+  }
+  
+  /* Input controls */
+  select, input {
+    background: #ffffff;
+    color: #202124;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+  
+  select:focus, input:focus {
+    border-color: #1a73e8;
+    outline: none;
+  }
+  
+  /* Table styles */
+  .table-box {
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    overflow: auto;
+    background: #ffffff;
+    max-height: 500px;
+    margin-bottom: 16px;
+  }
+  
+  .panel-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 16px 0 8px;
+    color: #202124;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  
+  th, td {
+    border: 1px solid #e0e0e0;
+    padding: 8px;
+    text-align: left;
+    position: relative;
+  }
+  
+  th {
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    font-weight: 500;
+    white-space: nowrap;
+    color: #202124;
+  }
+  
+  tbody tr:hover td {
+    background-color: #e8f0fe;
+  }
+  
+  td:focus {
+    outline: 2px solid #1a73e8;
+  }
+  
+  /* Conditional formatting rule table */
+  #rules-table td {
+    vertical-align: middle;
+  }
+  
+  #rules-table td:nth-child(4) {
+    width: 60px;
+  }
+  
+  #rules-table select,
+  #rules-table input {
+    width: 100%;
+  }
+  
+  #rules-table button {
+    background: transparent;
+    color: #ea4335;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  
+  #rules-table button:hover {
+    background: rgba(234, 67, 53, 0.1);
+  }
+  
+  .selected-cell {
+    background: #e8f0fe !important;
+  }
+  
+  .col-resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 20;
+  }
+  
+  /* Context menu */
+  .cell-menu {
+    position: absolute;
+    background: #ffffff;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    min-width: 150px;
+    display: none;
+  }
+  
+  .cell-menu.visible {
+    display: block;
+  }
+  
+  .cell-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: #202124;
+  }
+  
+  .cell-menu-item:hover {
+    background: #e8f0fe;
+  }
+  
+  /* Filter inputs */
+  #filter-row input {
+    width: 100%;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 1px solid #dadce0;
+    border-radius: 3px;
+    padding: 6px;
+    font-size: 12px;
+    color: #202124;
+  }
+  
+  /* Color preview for rules */
+  .color-preview {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 1px solid #dadce0;
+  }
+  
+  /* Status bar */
+  .status-bar {
+    font-size: 12px;
+    color: #5f6368;
+    padding: 4px 8px;
+    border-top: 1px solid #dadce0;
+    display: flex;
+    justify-content: space-between;
+    background: #ffffff;
+  }
+  
+  /* Loading overlay */
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 4px solid white;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Tooltip */
+  [data-tooltip] {
+    position: relative;
+  }
+  
+  [data-tooltip]:hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 100;
+    margin-bottom: 5px;
+  }
+</style>
+
+<div class="vis-container">
+  <div class="header">
+    <div class="title">Data Visualizer</div>
+    <div class="toolbar-section">
+      <button id="toggle-theme" class="btn" data-tooltip="Toggle dark/light theme">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12 20V4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20Z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Conditional Formatting Panel -->
+  <div class="panel-title">Conditional Formatting Rules</div>
+  <div class="table-box">
+    <table id="rules-table">
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Operator</th>
+          <th>Value</th>
+          <th style="min-width:64px">Color</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rules-body"></tbody>
+      <tfoot>
+        <tr>
+          <td><select id="rule-col"></select></td>
+          <td>
+            <select id="rule-op">
+              <option value="equals">equals</option>
+              <option value="contains">contains</option>
+              <option value="starts">starts with</option>
+              <option value="ends">ends with</option>
+              <option value="gt">&gt;</option>
+              <option value="gte">&gt;=</option>
+              <option value="lt">&lt;</option>
+              <option value="lte">&lt;=</option>
+              <option value="between">between</option>
+              <option value="blank">is blank</option>
+              <option value="notblank">is not blank</option>
+            </select>
+          </td>
+          <td>
+            <div id="rule-value-container">
+              <input id="rule-val" placeholder="Value">
+              <input id="rule-val2" placeholder="End value" style="margin-top:4px;display:none;">
+            </div>
+          </td>
+          <td>
+            <select id="rule-color">
+              <option value="#f28b82" style="background:#f28b82">Red</option>
+              <option value="#fdd663" style="background:#fdd663">Yellow</option>
+              <option value="#81c995" style="background:#81c995">Green</option>
+              <option value="#8ab4f8" style="background:#8ab4f8">Blue</option>
+              <option value="#d7aefb" style="background:#d7aefb">Purple</option>
+            </select>
+          </td>
+          <td><button id="add-rule" class="btn btn-primary" style="padding:4px 8px">Add</button></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Main Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-section">
+      <button id="add-row" class="btn" data-tooltip="Add new row">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        </svg>
+        Row
+      </button>
+      <button id="add-col" class="btn" data-tooltip="Add new column">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        </svg>
+        Column
+      </button>
+    </div>
+    
+    <div class="toolbar-section">
+      <span>Sort:</span>
+      <select id="sort-col" data-tooltip="Select column for sorting"></select>
+      <select id="sort-order">
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+      </select>
+      <button id="apply-sort" class="btn btn-primary" data-tooltip="Apply sorting">Sort</button>
+    </div>
+
+    <div class="toolbar-section">
+      <button id="export-csv" class="btn" data-tooltip="Export as CSV">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Data Table -->
+  <div class="panel-title">Data</div>
+  <div class="table-box" id="main-table-container">
+    <table class="data-table">
+      <thead>
+        <tr id="filter-row"></tr>
+        <tr id="header-row">{{#each headers}}<th>{{this}}</th>{{/each}}</tr>
+      </thead>
+      <tbody id="data-body">
+        {{#each rows}}<tr>{{#each this}}<td contenteditable="true">{{this}}</td>{{/each}}</tr>{{/each}}
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="status-bar">
+    <span id="selection-info">No selection</span>
+    <span id="count-info"></span>
+  </div>
+  
+  <!-- Context Menu -->
+  <div id="cell-menu" class="cell-menu">
+    <div class="cell-menu-item" id="menu-cut">Cut</div>
+    <div class="cell-menu-item" id="menu-copy">Copy</div>
+    <div class="cell-menu-item" id="menu-paste">Paste</div>
+    <div class="cell-menu-item" id="menu-delete">Delete</div>
+    <div class="cell-menu-item" id="menu-insert-row">Insert row</div>
+    <div class="cell-menu-item" id="menu-delete-row">Delete row</div>
+    <div class="cell-menu-item" id="menu-sort-asc">Sort A→Z</div>
+    <div class="cell-menu-item" id="menu-sort-desc">Sort Z→A</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Initialize state
+  const state = {
+    rules: [],
+    selectedCell: null,
+    selectedCells: [],
+    clipboard: null,
+    darkMode: false
+  };
+  
+  // DOM elements
+  const table = document.querySelector('.data-table');
+  const dataBody = document.getElementById('data-body');
+  const rulesBody = document.getElementById('rules-body');
+  const ruleCol = document.getElementById('rule-col');
+  const ruleOp = document.getElementById('rule-op');
+  const ruleVal = document.getElementById('rule-val');
+  const ruleVal2 = document.getElementById('rule-val2');
+  const ruleColor = document.getElementById('rule-color');
+  const cellMenu = document.getElementById('cell-menu');
+  const headers = [];
+  
+  // Helper functions
+  function safeJSONParse(str) {
+    try {
+      return JSON.parse(str);
+    } catch (e) {
+      return str;
+    }
+  }
+  
+  function getColumnIndex(cell) {
+    return Array.from(cell.parentNode.children).indexOf(cell);
+  }
+  
+  function getRowIndex(row) {
+    return Array.from(row.parentNode.children).indexOf(row);
+  }
+  
+  function updateStatusBar() {
+    const rowCount = dataBody.querySelectorAll('tr').length;
+    const colCount = headers.length;
+    document.getElementById('count-info').textContent = \`\${rowCount} rows × \${colCount} columns\`;
+    
+    if (state.selectedCell) {
+      const td = state.selectedCell;
+      const colIdx = getColumnIndex(td);
+      const rowIdx = getRowIndex(td.parentElement);
+      document.getElementById('selection-info').textContent = \`\${headers[colIdx]} (\${String.fromCharCode(65 + colIdx)}\${rowIdx + 1})\`;
+    } else {
+      document.getElementById('selection-info').textContent = 'No selection';
+    }
+  }
+  
+  // Initialize headers
+  function initHeaders() {
+    headers.length = 0;
+    [...table.querySelectorAll('thead tr:last-child th')].forEach(th => headers.push(th.textContent.trim()));
+    
+    const opts = headers.map(h => \`<option>\${h}</option>\`).join('');
+    ruleCol.innerHTML = opts;
+    document.getElementById('sort-col').innerHTML = opts;
+    
+    // Add column resizing handles
+    table.querySelectorAll('th').forEach(th => {
+      const handle = document.createElement('div');
+      handle.className = 'col-resize-handle';
+      th.style.position = 'relative';
+      th.appendChild(handle);
+      
+      handle.addEventListener('mousedown', e => {
+        e.preventDefault();
+        const startX = e.pageX;
+        const startWidth = th.offsetWidth;
+        
+        function onMouseMove(e) {
+          const width = startWidth + e.pageX - startX;
+          th.style.width = \`\${Math.max(50, width)}px\`;
+        }
+        
+        function onMouseUp() {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        }
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+      
+      // Add click handler for column sorting
+      th.addEventListener('click', e => {
+        if (e.target === handle) return;
+        
+        const colIdx = getColumnIndex(th);
+        const asc = th.classList.contains('sort-desc'); // Toggle direction
+        
+        // Remove all sorting classes
+        table.querySelectorAll('th').forEach(h => {
+          h.classList.remove('sort-asc', 'sort-desc');
+        });
+        
+        // Set new sorting class
+        th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+        
+        // Sort the table
+        sortTable(colIdx, asc ? 'asc' : 'desc');
+      });
+    });
+    
+    updateStatusBar();
+  }
+  
+  // Render conditional formatting rules
+  function renderRules() {
+    rulesBody.innerHTML = state.rules.map((r, i) => {
+      let valueDisplay = r.value;
+      if (r.op === 'between') {
+        valueDisplay = \`\${r.value} - \${r.endValue}\`;
+      } else if (r.op === 'blank' || r.op === 'notblank') {
+        valueDisplay = '';
+      }
+      
+      return \`<tr>
+        <td>\${r.column}</td>
+        <td>\${getOperatorDisplay(r.op)}</td>
+        <td>\${valueDisplay}</td>
+        <td style="background:\${r.color}"></td>
+        <td><button data-i="\${i}">×</button></td>
+      </tr>\`;
+    }).join('');
+    
+    rulesBody.querySelectorAll('button').forEach(b => {
+      b.onclick = () => {
+        state.rules.splice(b.dataset.i, 1);
+        renderRules();
+        applyConditionalFormatting();
+      };
+    });
+  }
+  
+  function getOperatorDisplay(op) {
+    const map = {
+      'equals': 'equals',
+      'contains': 'contains',
+      'starts': 'starts with',
+      'ends': 'ends with',
+      'gt': '>',
+      'gte': '>=',
+      'lt': '<',
+      'lte': '<=',
+      'between': 'between',
+      'blank': 'is blank',
+      'notblank': 'is not blank'
+    };
+    return map[op] || op;
+  }
+  
+  // Clear conditional formatting
+  function clearConditionalFormatting() {
+    dataBody.querySelectorAll('td').forEach(td => td.style.background = '');
+  }
+  
+  // Apply conditional formatting
+  function applyConditionalFormatting() {
+    clearConditionalFormatting();
+    
+    dataBody.querySelectorAll('tr').forEach(tr => {
+      const cells = [...tr.children];
+      
+      state.rules.forEach(r => {
+        const idx = headers.indexOf(r.column);
+        if (idx < 0) return;
+        
+        const td = cells[idx];
+        const txt = td.textContent.trim();
+        let ok = false;
+        
+        switch (r.op) {
+          case 'equals':
+            ok = txt === String(r.value);
+            break;
+          case 'contains':
+            ok = txt.includes(String(r.value));
+            break;
+          case 'starts':
+            ok = txt.startsWith(String(r.value));
+            break;
+          case 'ends':
+            ok = txt.endsWith(String(r.value));
+            break;
+          case 'gt':
+            ok = !isNaN(txt) && parseFloat(txt) > parseFloat(r.value);
+            break;
+          case 'gte':
+            ok = !isNaN(txt) && parseFloat(txt) >= parseFloat(r.value);
+            break;
+          case 'lt':
+            ok = !isNaN(txt) && parseFloat(txt) < parseFloat(r.value);
+            break;
+          case 'lte':
+            ok = !isNaN(txt) && parseFloat(txt) <= parseFloat(r.value);
+            break;
+          case 'between':
+            ok = !isNaN(txt) && parseFloat(txt) >= parseFloat(r.value) && parseFloat(txt) <= parseFloat(r.endValue);
+            break;
+          case 'blank':
+            ok = txt === '';
+            break;
+          case 'notblank':
+            ok = txt !== '';
+            break;
+        }
+        
+        if (ok) td.style.background = r.color;
+      });
+    });
+  }
+  
+  // Build filter inputs
+  function buildFilters() {
+    const row = document.getElementById('filter-row');
+    row.innerHTML = headers.map(() => 
+      '<th><input style="width:100%" placeholder="Filter..."></th>'
+    ).join('');
+    
+    row.querySelectorAll('input').forEach((inp, i) => {
+      inp.oninput = () => {
+        const terms = [...row.querySelectorAll('input')].map(x => x.value.toLowerCase());
+        
+        dataBody.querySelectorAll('tr').forEach(tr => {
+          const show = [...tr.children].every((td, j) => 
+            !terms[j] || td.textContent.toLowerCase().includes(terms[j])
+          );
+          tr.style.display = show ? '' : 'none';
+        });
+        
+        applyConditionalFormatting();
+        updateStatusBar();
+      };
+    });
+  }
+  
+  // Sort table
+  function sortTable(colIdx, order = 'asc') {
+    const rows = [...dataBody.querySelectorAll('tr')];
+    
+    rows.sort((a, b) => {
+      const aVal = a.children[colIdx].textContent.trim();
+      const bVal = b.children[colIdx].textContent.trim();
+      
+      // Try numeric comparison first
+      const aNum = parseFloat(aVal);
+      const bNum = parseFloat(bVal);
+      
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return order === 'asc' ? aNum - bNum : bNum - aNum;
+      }
+      
+      // Fall back to string comparison
+      return order === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    });
+    
+    // Clear table and append sorted rows
+    rows.forEach(r => dataBody.appendChild(r));
+    applyConditionalFormatting();
+  }
+  
+  // Cell selection handling
+  function handleCellSelection(e) {
+    const td = e.target.closest('td');
+    if (!td) return;
+    
+    // Clear previous selection
+    table.querySelectorAll('.selected-cell').forEach(cell => 
+      cell.classList.remove('selected-cell')
+    );
+    
+    // Set new selection
+    td.classList.add('selected-cell');
+    state.selectedCell = td;
+    updateStatusBar();
+  }
+  
+  // Context menu
+  function showContextMenu(e) {
+    if (e.target.tagName !== 'TD' && e.target.tagName !== 'TH') return;
+    
+    e.preventDefault();
+    cellMenu.style.left = \`\${e.pageX}px\`;
+    cellMenu.style.top = \`\${e.pageY}px\`;
+    cellMenu.classList.add('visible');
+    
+    // Store context
+    state.contextCell = e.target;
+  }
+  
+  function hideContextMenu() {
+    cellMenu.classList.remove('visible');
+  }
+  
+  // Export to CSV
+  function exportToCsv() {
+    let csv = '';
+    
+    // Add headers
+    csv += headers.map(h => \`"\${h.replace(/"/g, '""')}"\`).join(',') + '\\n';
+    
+    // Add data rows
+    dataBody.querySelectorAll('tr').forEach(row => {
+      const rowData = [...row.querySelectorAll('td')].map(
+        cell => \`"\${cell.textContent.replace(/"/g, '""')}"\`
+      );
+      csv += rowData.join(',') + '\\n';
+    });
+    
+    // Create download link
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'data_export.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+  
+  // Event Listeners
+  document.getElementById('add-row').onclick = () => {
+    const tr = document.createElement('tr');
+    headers.forEach(() => {
+      const td = document.createElement('td');
+      td.contentEditable = 'true';
+      tr.appendChild(td);
+    });
+    dataBody.appendChild(tr);
+    applyConditionalFormatting();
+    updateStatusBar();
+  };
+  
+  document.getElementById('add-col').onclick = () => {
+    const name = prompt('Enter column name');
+    if (!name) return;
+    
+    // Add header
+    const th = document.createElement('th');
+    th.textContent = name;
+    table.querySelector('thead tr:last-child').appendChild(th);
+    
+    // Add filter cell
+    const filterTh = document.createElement('th');
+    filterTh.innerHTML = '<input style="width:100%" placeholder="Filter...">';
+    table.querySelector('#filter-row').appendChild(filterTh);
+    
+    // Add cell to each row
+    dataBody.querySelectorAll('tr').forEach(tr => {
+      const td = document.createElement('td');
+      td.contentEditable = 'true';
+      tr.appendChild(td);
+    });
+    
+    initHeaders();
+    buildFilters();
+    applyConditionalFormatting();
+  };
+  
+  document.getElementById('add-rule').onclick = () => {
+    const col = ruleCol.value;
+    const op = ruleOp.value;
+    const val = ruleVal.value.trim();
+    
+    // Validate based on operator
+    if (op !== 'blank' && op !== 'notblank' && !val) {
+      alert('Please enter a value');
+      return;
+    }
+    
+    const color = ruleColor.value;
+    let ruleObj = {
+      column: col, 
+      op, 
+      value: op === 'gt' || op === 'lt' || op === 'gte' || op === 'lte' || op === 'between' ? parseFloat(val) : val,
+      color
+    };
+    
+    // For 'between' operator, get second value
+    if (op === 'between') {
+      const val2 = ruleVal2.value.trim();
+      if (!val2) {
+        alert('Please enter end value for "between" operator');
+        return;
+      }
+      ruleObj.endValue = parseFloat(val2);
+    }
+    
+    state.rules.push(ruleObj);
+    ruleVal.value = '';
+    ruleVal2.value = '';
+    renderRules();
+    applyConditionalFormatting();
+  };
+  
+  // Handle operator change
+  ruleOp.addEventListener('change', function() {
+    const op = this.value;
+    
+    // Show/hide second value input for 'between' operator
+    if (op === 'between') {
+      ruleVal2.style.display = 'block';
+      ruleVal.placeholder = 'Start value';
+    } else {
+      ruleVal2.style.display = 'none';
+      ruleVal.placeholder = 'Value';
+    }
+    
+    // Hide/show value input for blank/notblank
+    if (op === 'blank' || op === 'notblank') {
+      ruleVal.style.display = 'none';
+    } else {
+      ruleVal.style.display = 'block';
+    }
+  });
+  
+  document.getElementById('apply-sort').onclick = () => {
+    const col = document.getElementById('sort-col').value;
+    const order = document.getElementById('sort-order').value;
+    const idx = headers.indexOf(col);
+    
+    if (idx < 0) return;
+    
+    sortTable(idx, order);
+    
+    // Highlight sorted column
+    table.querySelectorAll('th').forEach((th, i) => {
+      th.classList.remove('sort-asc', 'sort-desc');
+      if (i === idx) {
+        th.classList.add(order === 'asc' ? 'sort-asc' : 'sort-desc');
+      }
+    });
+  };
+  
+  document.getElementById('export-csv').onclick = exportToCsv;
+  document.getElementById('toggle-theme').onclick = () => {
+    // Note: This doesn't actually change themes in Postman
+    // It's kept for demonstration purposes, but Postman doesn't respect this change
+    // We're already forcing a light theme for compatibility
+    alert('Theme settings must be changed in Postman preferences.');
+  };
+  
+  // Context menu handlers
+  document.getElementById('menu-cut').onclick = () => {
+    if (!state.selectedCell) return;
+    state.clipboard = state.selectedCell.textContent;
+    state.selectedCell.textContent = '';
+    hideContextMenu();
+    applyConditionalFormatting();
+  };
+  
+  document.getElementById('menu-copy').onclick = () => {
+    if (!state.selectedCell) return;
+    state.clipboard = state.selectedCell.textContent;
+    hideContextMenu();
+    
+    // Try to use system clipboard
+    try {
+      navigator.clipboard.writeText(state.clipboard);
+    } catch (e) {
+      console.log('Could not copy to system clipboard');
+    }
+  };
+  
+  document.getElementById('menu-paste').onclick = () => {
+    if (!state.selectedCell || state.clipboard === null) return;
+    state.selectedCell.textContent = state.clipboard;
+    hideContextMenu();
+    applyConditionalFormatting();
+  };
+  
+  document.getElementById('menu-delete').onclick = () => {
+    if (!state.selectedCell) return;
+    state.selectedCell.textContent = '';
+    hideContextMenu();
+    applyConditionalFormatting();
+  };
+  
+  document.getElementById('menu-insert-row').onclick = () => {
+    if (!state.contextCell) return;
+    const tr = state.contextCell.closest('tr');
+    const newRow = document.createElement('tr');
+    
+    headers.forEach(() => {
+      const td = document.createElement('td');
+      td.contentEditable = 'true';
+      newRow.appendChild(td);
+    });
+    
+    tr.parentNode.insertBefore(newRow, tr);
+    hideContextMenu();
+    applyConditionalFormatting();
+    updateStatusBar();
+  };
+  
+  document.getElementById('menu-delete-row').onclick = () => {
+    if (!state.contextCell) return;
+    const tr = state.contextCell.closest('tr');
+    tr.remove();
+    hideContextMenu();
+    updateStatusBar();
+  };
+  
+  document.getElementById('menu-sort-asc').onclick = () => {
+    if (!state.contextCell) return;
+    const colIdx = getColumnIndex(state.contextCell);
+    sortTable(colIdx, 'asc');
+    hideContextMenu();
+  };
+  
+  document.getElementById('menu-sort-desc').onclick = () => {
+    if (!state.contextCell) return;
+    const colIdx = getColumnIndex(state.contextCell);
+    sortTable(colIdx, 'desc');
+    hideContextMenu();
+  };
+  
+  // Cell selection and editing
+  table.addEventListener('click', handleCellSelection);
+  table.addEventListener('contextmenu', showContextMenu);
+  document.addEventListener('click', e => {
+    if (!cellMenu.contains(e.target)) {
+      hideContextMenu();
+    }
+  });
+  
+  // Keyboard navigation
+  document.addEventListener('keydown', e => {
+    if (!state.selectedCell) return;
+    
+    const row = state.selectedCell.parentNode;
+    const rowIdx = getRowIndex(row);
+    const colIdx = getColumnIndex(state.selectedCell);
+    let nextCell;
+    
+    switch (e.key) {
+      case 'ArrowUp':
+        if (rowIdx > 0) {
+          nextCell = dataBody.rows[rowIdx - 1].cells[colIdx];
+        }
+        break;
+      case 'ArrowDown':
+        if (rowIdx < dataBody.rows.length - 1) {
+          nextCell = dataBody.rows[rowIdx + 1].cells[colIdx];
+        }
+        break;
+      case 'ArrowLeft':
+        if (colIdx > 0) {
+          nextCell = row.cells[colIdx - 1];
+        }
+        break;
+      case 'ArrowRight':
+        if (colIdx < row.cells.length - 1) {
+          nextCell = row.cells[colIdx + 1];
+        }
+        break;
+      case 'Tab':
+        if (colIdx < row.cells.length - 1) {
+          nextCell = row.cells[colIdx + 1];
+        } else if (rowIdx < dataBody.rows.length - 1) {
+          // Move to first cell of next row
+          nextCell = dataBody.rows[rowIdx + 1].cells[0];
+        }
+        e.preventDefault();
+        break;
+      case 'Enter':
+        if (rowIdx < dataBody.rows.length - 1) {
+          nextCell = dataBody.rows[rowIdx + 1].cells[colIdx];
+        }
+        e.preventDefault();
+        break;
+      case 'Delete':
+        state.selectedCell.textContent = '';
+        applyConditionalFormatting();
+        break;
+    }
+    
+    if (nextCell) {
+      table.querySelectorAll('.selected-cell').forEach(cell => 
+        cell.classList.remove('selected-cell')
+      );
+      nextCell.classList.add('selected-cell');
+      state.selectedCell = nextCell;
+      updateStatusBar();
+    }
+  });
+  
+  // Fix bug where contenteditable elements can cause arrow key navigation issues
+  dataBody.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      e.target.blur();
+      
+      // Move to the cell below
+      const row = e.target.parentNode;
+      const rowIdx = getRowIndex(row);
+      const colIdx = getColumnIndex(e.target);
+      
+      if (rowIdx < dataBody.rows.length - 1) {
+        const nextCell = dataBody.rows[rowIdx + 1].cells[colIdx];
+        nextCell.focus();
+        state.selectedCell = nextCell;
+        
+        // Select cell properly
+        table.querySelectorAll('.selected-cell').forEach(cell => 
+          cell.classList.remove('selected-cell')
+        );
+        nextCell.classList.add('selected-cell');
+        updateStatusBar();
+      }
+    }
+  });
+  
+  // Update when cell content changes
+  dataBody.addEventListener('input', function(e) {
+    applyConditionalFormatting();
+  });
+  
+  // Handle paste functionality
+  document.addEventListener('paste', function(e) {
+    if (!state.selectedCell) return;
+    
+    // Try to get clipboard data
+    const clipboardData = e.clipboardData || window.clipboardData;
+    const pastedData = clipboardData.getData('Text');
+    
+    if (pastedData.includes('\\t') || pastedData.includes('\\n')) {
+      // This might be a table from Excel or another sheet application
+      e.preventDefault();
+      
+      const rows = pastedData.split('\\n').filter(row => row.trim());
+      if (rows.length === 0) return;
+      
+      const currentRow = state.selectedCell.parentNode;
+      const startRowIdx = getRowIndex(currentRow);
+      const startColIdx = getColumnIndex(state.selectedCell);
+      
+      rows.forEach((rowData, rowOffset) => {
+        const cells = rowData.split('\\t');
+        
+        // Make sure we have a row for this data
+        let targetRow;
+        if (rowOffset === 0) {
+          targetRow = currentRow;
+        } else {
+          if (startRowIdx + rowOffset < dataBody.rows.length) {
+            targetRow = dataBody.rows[startRowIdx + rowOffset];
+          } else {
+            // Need to create a new row
+            targetRow = document.createElement('tr');
+            headers.forEach(() => {
+              const td = document.createElement('td');
+              td.contentEditable = 'true';
+              targetRow.appendChild(td);
+            });
+            dataBody.appendChild(targetRow);
+          }
+        }
+        
+        // Fill in the cells
+        cells.forEach((cellData, colOffset) => {
+          const targetColIdx = startColIdx + colOffset;
+          if (targetColIdx < headers.length) {
+            targetRow.cells[targetColIdx].textContent = cellData;
+          }
+        });
+      });
+      
+      applyConditionalFormatting();
+      updateStatusBar();
+    }
+  });
+  
+  // Initialize
+  function initVisualizer() {
+    initHeaders();
+    renderRules();
+    buildFilters();
+    applyConditionalFormatting();
+    updateStatusBar();
+    
+    // Add Excel-like header style (A, B, C, etc.)
+    document.querySelectorAll('th').forEach((th, i) => {
+      const letter = String.fromCharCode(65 + i);
+      th.setAttribute('data-col', letter);
+    });
+  }
+  
+  // Handle Postman error cases
+  function handlePostmanErrors() {
+    try {
+      // If we're missing data, create a sample set
+      if (headers.length === 0) {
+        // Create some sample data
+        const headerRow = table.querySelector('thead tr:last-child');
+        if (!headerRow || headerRow.children.length === 0) {
+          const sampleHeaders = ['Name', 'Value', 'Description'];
+          headerRow.innerHTML = sampleHeaders.map(h => \`<th>\${h}</th>\`).join('');
+          
+          // Add some sample rows
+          dataBody.innerHTML = \`
+            <tr><td contenteditable="true">Parameter 1</td><td contenteditable="true">12345</td><td contenteditable="true">First parameter</td></tr>
+            <tr><td contenteditable="true">Parameter 2</td><td contenteditable="true">67890</td><td contenteditable="true">Second parameter</td></tr>
+            <tr><td contenteditable="true">Parameter 3</td><td contenteditable="true">ABCDE</td><td contenteditable="true">Third parameter</td></tr>
+          \`;
+          
+          console.log('Created sample data since no data was available');
+        }
+      }
+    } catch (e) {
+      console.error('Error handling Postman data:', e);
+    }
+  }
+  
+  // Safe initialization
+  try {
+    initVisualizer();
+    handlePostmanErrors();
+  } catch (e) {
+    console.error('Error initializing visualizer:', e);
+    alert('Error initializing visualizer. Please check the console for details.');
+  }
+})();
+</script>
+`;
+
+/**
+ * Constructs the visualizer payload from Postman's response
+ * Includes error handling and support for various JSON structures
+ */
+function constructVisualizerPayload(pm) {
+  try {
+    // Default in case of errors
+    let data = [];
+    let json = null;
+    
+    // Try to parse response
+    try {
+      json = pm.response.json();
+    } catch (e) {
+      console.error('Error parsing JSON response:', e);
+      // Check if it's an array-like string that just needs parsing
+      try {
+        const responseText = pm.response.text();
+        if (responseText && (responseText.startsWith('[') || responseText.startsWith('{'))) {
+          json = JSON.parse(responseText);
+        }
+      } catch (innerError) {
+        console.error('Could not recover from JSON parsing error:', innerError);
+      }
+    }
+    
+    // Handle different response structures
+    if (Array.isArray(json)) {
+      data = json;
+    } else if (json && typeof json === 'object') {
+      // Look for array properties
+      data = null;
+      
+      // First, look for properties with large arrays - they're likely the main data
+      let largestArraySize = 0;
+      let largestArrayKey = null;
+      
+      for (const key in json) {
+        if (Array.isArray(json[key]) && json[key].length > largestArraySize) {
+          largestArraySize = json[key].length;
+          largestArrayKey = key;
+        }
+      }
+      
+      if (largestArrayKey && largestArraySize > 0) {
+        data = json[largestArrayKey];
+      } else {
+        // If no arrays or all empty, look for any array
+        for (const key in json) {
+          if (Array.isArray(json[key])) {
+            data = json[key];
+            break;
+          }
+        }
+      }
+      
+      // If still no valid array found, use the object itself
+      if (!data) data = [json];
+    } else {
+      // For primitive responses or invalid/empty responses
+      data = [{value: String(json)}];
+    }
+    
+    // Ensure we don't have too many records (performance)
+    if (data.length > 1000) {
+      console.warn(`Large dataset detected (${data.length} records). Limiting to first 1000 for performance.`);
+      data = data.slice(0, 1000);
+    }
+    
+    // Flatten nested objects for table display
+    const flat = data.map(obj => {
+      const res = {};
+      
+      // Recursive function to flatten object
+      (function flatten(o, prefix = '') {
+        for (const key in o) {
+          if (!o.hasOwnProperty(key)) continue;
+          
+          const value = o[key];
+          const newKey = prefix ? `${prefix}.${key}` : key;
+          
+          if (Array.isArray(value)) {
+            // Handle arrays by converting to string but in a readable format
+            res[newKey] = JSON.stringify(value)
+              .replace(/,/g, ', ')
+              .replace(/\[/g, '[')
+              .replace(/\]/g, ']')
+              .replace(/"/g, '');
+          } else if (value && typeof value === 'object' && value !== null) {
+            flatten(value, newKey);
+          } else {
+            // Handle null, undefined, and primitive values
+            res[newKey] = value === null || value === undefined ? '' : String(value);
+          }
+        }
+      })(obj);
+      
+      return res;
+    });
+    
+    // Extract unique headers across all objects
+    const headers = [...new Set(flat.flatMap(r => Object.keys(r)))];
+    
+    // Create rows from flattened data
+    const rows = flat.map(r => headers.map(h => r[h] || ''));
+    
+    return { headers, rows };
+  } catch (e) {
+    console.error('Fatal error in constructVisualizerPayload:', e);
+    // Return minimal payload that won't break the visualizer
+    return { 
+      headers: ['Error'], 
+      rows: [['Failed to process response. See console for details.']] 
+    };
+  }
+}
+
+// Set the visualizer with proper error handling
+try {
+  pm.visualizer.set(template, constructVisualizerPayload(pm));
+} catch (e) {
+  console.error('Error setting visualizer:', e);
+  pm.visualizer.set(`
+    <div style="color:red;padding:20px;background:white;">
+      <h3>Visualizer Error</h3>
+      <p>There was an error setting up the visualizer: ${e.message}</p>
+      <p>Check the console for more details.</p>
+    </div>
+  `);
+}
